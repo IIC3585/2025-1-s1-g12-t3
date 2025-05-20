@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const OPEN_EXCHANGE_APPID = import.meta.env.VITE_OPEN_EXCHANGE_API_ID;
+const OPEN_EXCHANGE_BASE_URL = `https://openexchangerates.org/api`;
 const API_KEY = import.meta.env.VITE_CURRENCY_API_KEY;
 const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}`;
+
 
 const currencyService = {
   async getSupportedCurrencies() {
@@ -41,6 +44,35 @@ const currencyService = {
       return null;
     }
   },
+
+  async getHistoricalRates(baseCurrency, targetCurrency, startDate, endDate) {
+    try {
+      console.log("Open:", OPEN_EXCHANGE_APPID)
+      let params = {
+        // app_id : OPEN_EXCHANGE_APPID,
+        start : startDate,
+        end : endDate,
+        base : baseCurrency,
+        symbols : targetCurrency,
+        show_alternative : true,
+      };
+      let requestConfig = {
+        method: "get",
+        url: `${OPEN_EXCHANGE_BASE_URL}/time-series.json`,
+        params: params,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Token ${OPEN_EXCHANGE_APPID}`
+        },
+      };
+      const response = await axios.request(requestConfig);
+      return response;
+    } catch (error) {
+      console.error("Error al obtener la tasa de cambio histórica:", error);
+      throw error;
+    }
+  },
+
 };
 
 export default currencyService;
