@@ -48,4 +48,7 @@
   });
 </script>
 
-<AreaChart {data} {xAttr} {yAttr} {dataDomain} {areaColor} {strokeColor}></AreaChart>
+<div class="grow-7 border-2 border-gray-300 rounded-lg p-4 w-md lg:width-full flex flex-col">
+  <div class="font-bold">{baseCurrency} to {targetCurrency}</div>
+  <AreaChart {data} {xAttr} {yAttr} {dataDomain} {areaColor} {strokeColor}></AreaChart>
+</div>

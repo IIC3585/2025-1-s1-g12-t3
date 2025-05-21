@@ -25,14 +25,16 @@
           ],
           // grid: true
         });
+    plot.setAttribute('class',`${plot.classList} w-full h-full plot`); // set the class name for the plot
     div?.append(plot); // append the new chart to the div
   });
 </script>
 
-<div bind:this={div} role="img"></div>
+<div bind:this={div} role="img" class="width-full"></div>
 
 <style>
-  :global(svg g[aria-label="tip"]) {
+  /* :global(svg g[aria-label="tip"]) { */
+  :global(.plot) {
     font-family: Atkinson Hyperlegible, sans-serif;
   }
 </style>
