@@ -1,8 +1,6 @@
 <script lang="ts">
   import * as Plot from '@observablehq/plot';
-  import * as d3 from 'd3';
   import * as htl from 'htl';
-  import tippy from 'tippy.js';
   let { data, xAttr, yAttr, dataDomain, areaColor, strokeColor } = $props();
   let div: HTMLElement | undefined = $state();
 
@@ -32,9 +30,3 @@
 </script>
 
 <div bind:this={div} role="img"></div>
-
-<style>
-  g[aria-label="tip"] {
-    border-radius: 10px;
-  }
-</style>
