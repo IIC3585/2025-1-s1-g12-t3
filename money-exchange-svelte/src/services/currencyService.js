@@ -45,20 +45,16 @@ const currencyService = {
     }
   },
 
-  async getHistoricalRates(baseCurrency, targetCurrency, startDate, endDate) {
+  async getHistoricalRate(baseCurrency, targetCurrency, date) {
     try {
-      console.log("Open:", OPEN_EXCHANGE_APPID)
       let params = {
-        // app_id : OPEN_EXCHANGE_APPID,
-        start : startDate,
-        end : endDate,
         base : baseCurrency,
         symbols : targetCurrency,
         show_alternative : true,
       };
       let requestConfig = {
         method: "get",
-        url: `${OPEN_EXCHANGE_BASE_URL}/time-series.json`,
+        url: `${OPEN_EXCHANGE_BASE_URL}/historical/${date}.json`,
         params: params,
         headers: {
           "Content-Type": "application/json",
@@ -71,6 +67,22 @@ const currencyService = {
       console.error("Error al obtener la tasa de cambio histórica:", error);
       throw error;
     }
+  },
+
+  async getHistoricalRates(baseCurrency, targetCurrency, dates) {
+    return Promise.all(
+      dates.map((date) => this.getHistoricalRate(baseCurrency, targetCurrency, date))
+    )
+      .then((responses) => {
+        return responses.map((response, idx) => {
+          const rate = response.data.rates[targetCurrency];
+          return { date: new Date(dates[idx]), rate: rate };
+        });
+      })
+      .catch((error) => {
+        console.error("Error al obtener las tasas de cambio históricas:", error);
+        throw error;
+      });
   },
 
 };

@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Plot from '@observablehq/plot';
-
-  let { data, xAttr, yAttr, areaColor, strokeColor } = $props();
+  import * as htl from 'htl';
+  let { data, xAttr, yAttr, dataDomain, areaColor, strokeColor } = $props();
   let div: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -9,12 +9,19 @@
     // add the new chart
     div?.append(
         Plot.plot({
+          y: {type: 'linear', domain: dataDomain, grid: true},
           marks: [
+            () => htl.svg`<defs>
+              <linearGradient id="gradient" gradientTransform="rotate(90)">
+                <stop offset="70%" stop-color="${areaColor}" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="none" stop-opacity="0" />
+              </linearGradient>
+            </defs>`,
             Plot.ruleY([0]),
             Plot.lineY(data, {x: xAttr, y: yAttr, stroke: strokeColor, tip: true, strokeWidth: 2}),
-            Plot.areaY(data, {x: xAttr, y: yAttr, fill: areaColor, fillOpacity: 0.2}),
+            Plot.areaY(data, {x: xAttr, y1: dataDomain[0], y2: yAttr, fill: "url(#gradient)", fillOpacity: 0.2}),
           ],
-          grid: true
+          // grid: true
         })
     );
   });
