@@ -19,7 +19,7 @@
             Plot.ruleY([0]),
             Plot.lineY(data, {
               x: xAttr, y: yAttr, stroke: strokeColor, 
-              tip: { fontFamily: "Atkinson Hyperlegible, sans-serif", fontSize: 14}, 
+              tip: { fontSize: 14}, 
               strokeWidth: 2}),
             Plot.areaY(data, {x: xAttr, y1: dataDomain[0], y2: yAttr, fill: "url(#gradient)", fillOpacity: 0.2}),
           ],
@@ -30,3 +30,9 @@
 </script>
 
 <div bind:this={div} role="img"></div>
+
+<style>
+  :global(svg g[aria-label="tip"]) {
+    font-family: Atkinson Hyperlegible, sans-serif;
+  }
+</style>
