@@ -71,7 +71,7 @@
   }
 </script>
 
-<Card.Root class="w-full max-w-md mx-auto">
+<Card.Root class="w-full max-w-lg">
   <Card.Header>
     <Card.Title>Conversor de Monedas</Card.Title>
     <Card.Description>
