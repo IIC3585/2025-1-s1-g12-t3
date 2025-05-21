@@ -1,14 +1,15 @@
 <script lang="ts">
   import * as Plot from '@observablehq/plot';
+  import * as d3 from 'd3';
   import * as htl from 'htl';
+  import tippy from 'tippy.js';
   let { data, xAttr, yAttr, dataDomain, areaColor, strokeColor } = $props();
   let div: HTMLElement | undefined = $state();
 
   $effect(() => {
     div?.firstChild?.remove(); // remove old chart, if any
     // add the new chart
-    div?.append(
-        Plot.plot({
+    let plot = Plot.plot({
           y: {type: 'linear', domain: dataDomain, grid: true},
           marks: [
             () => htl.svg`<defs>
@@ -18,13 +19,22 @@
               </linearGradient>
             </defs>`,
             Plot.ruleY([0]),
-            Plot.lineY(data, {x: xAttr, y: yAttr, stroke: strokeColor, tip: true, strokeWidth: 2}),
+            Plot.lineY(data, {
+              x: xAttr, y: yAttr, stroke: strokeColor, 
+              tip: { fontFamily: "Atkinson Hyperlegible, sans-serif", fontSize: 14}, 
+              strokeWidth: 2}),
             Plot.areaY(data, {x: xAttr, y1: dataDomain[0], y2: yAttr, fill: "url(#gradient)", fillOpacity: 0.2}),
           ],
           // grid: true
-        })
-    );
+        });
+    div?.append(plot); // append the new chart to the div
   });
 </script>
 
 <div bind:this={div} role="img"></div>
+
+<style>
+  g[aria-label="tip"] {
+    border-radius: 10px;
+  }
+</style>
