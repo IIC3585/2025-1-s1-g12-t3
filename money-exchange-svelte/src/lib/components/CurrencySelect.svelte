@@ -26,7 +26,7 @@
         <div class="p-2 text-center text-gray-500">Cargando monedas...</div>
       {:else}
         {#each currencies as currency}
-          <Select.Item value={currency}>
+          <Select.Item value={currency.value}>
             {currency.label}
           </Select.Item>
         {/each}

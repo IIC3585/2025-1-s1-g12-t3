@@ -4,7 +4,6 @@
   
 
   let { baseCurrency, targetCurrency, timePeriod, timeInterval } = $props();
-  
   const getDates = (timePeriod, timeInterval) => {
     const today = new Date();
     const dates = [];
@@ -40,6 +39,8 @@
     return getRateDomain(data);
   });
   $effect(() => {
+    console.log("Chart BC:", baseCurrency.value);
+    console.log("Chart TC:", targetCurrency.value);
     currencyService
       .getHistoricalRates(baseCurrency, targetCurrency, dates)
       .then((response) => {

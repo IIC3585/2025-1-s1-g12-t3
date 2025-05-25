@@ -7,29 +7,23 @@
   import CurrencySelect from "$lib/components/CurrencySelect.svelte";
   import Coin from "$lib/components/Coin.svelte";
 
-  let currencies = [];
-  let fromCurrency = null;
-  let toCurrency = null;
+  let { baseCurrency = $bindable(), targetCurrency = $bindable() } = $props();
+  let currencies = $state([]);
   let amount = 1;
-  let result = 0;
   let isLoading = false;
   let error = "";
-  let isLoadingCurrencies = true;
+  let isLoadingCurrencies = $state(true);
+  let supportedCurrencies = $state([]);
+  let result = $state(null);
 
   onMount(async () => {
     try {
-      const supportedCurrencies =
-        await currencyService.getSupportedCurrencies();
-
-      currencies = supportedCurrencies; // currencyService devuelve el formato { value, label }
-
-      // Asignar monedas por defecto o la primera si no se encuentran
-      fromCurrency =
-        currencies.find((c) => c.value === "USD") || currencies[0] || null;
-      toCurrency =
-        currencies.find((c) => c.value === "CLP") || currencies[1] || null;
-    } catch (err) {
-      console.error("Error al cargar las monedas:", err);
+      isLoadingCurrencies = true;
+      currencies = await currencyService.getSupportedCurrencies();
+      baseCurrency = { value: 'USD', label: 'USD - United States Dollar' };
+      targetCurrency = { value: 'CLP', label: 'CLP - Chilean Peso' };
+    } catch (error) {
+      console.error("Error al cargar las monedas:", error);
       error = "Error al cargar las monedas. Por favor, intenta de nuevo.";
     } finally {
       isLoadingCurrencies = false;
@@ -39,19 +33,22 @@
   async function convertCurrency() {
     error = "";
     isLoading = true;
-
-    if (!fromCurrency || !toCurrency) {
+    console.log("Convirtiendo moneda...");
+    if (!baseCurrency || !targetCurrency) {
       error = "Por favor, selecciona ambos tipos de monedas.";
       isLoading = false;
       return;
     }
 
     try {
+      console.log("Calling currency service to get exchange rate...");
       const rate = await currencyService.getExchangeRate(
-        fromCurrency.value, // Accede a .value solo si fromCurrency no es null
-        toCurrency.value // Accede a .value solo si toCurrency no es null
+        baseCurrency.value, // Accede a .value solo si baseCurrency no es null
+        targetCurrency.value // Accede a .value solo si targetCurrency no es null
       );
+      console.log("Tasa de cambio:", rate);
       result = amount * rate;
+      console.log("Resultado de la conversión:", result);
     } catch (err) {
       console.error("Error en la conversión:", err);
       error = "Error en la conversión. Por favor, intenta de nuevo.";
@@ -62,10 +59,10 @@
   }
 
   function swapCurrencies() {
-    [fromCurrency, toCurrency] = [toCurrency, fromCurrency];
-    if (result > 0 && fromCurrency && toCurrency) {
+    [baseCurrency, targetCurrency] = [targetCurrency, baseCurrency];
+    if (result > 0 && baseCurrency && targetCurrency) {
       convertCurrency();
-    } else if (fromCurrency && toCurrency) {
+    } else if (baseCurrency && targetCurrency) {
       convertCurrency();
     }
   }
@@ -107,7 +104,7 @@
         >
           <CurrencySelect
             id="from"
-            bind:selected={fromCurrency}
+            bind:selected={baseCurrency}
             {currencies}
             isLoading={isLoadingCurrencies}
             placeholder="Selecciona moneda"
@@ -124,7 +121,7 @@
 
           <CurrencySelect
             id="to"
-            bind:selected={toCurrency}
+            bind:selected={targetCurrency}
             {currencies}
             isLoading={isLoadingCurrencies}
             placeholder="Selecciona moneda"
@@ -139,8 +136,8 @@
       on:click={convertCurrency}
       disabled={isLoading ||
         isLoadingCurrencies ||
-        !fromCurrency ||
-        !toCurrency}
+        !baseCurrency ||
+        !targetCurrency}
     >
       {#if isLoading}
         Convirtiendo...
@@ -153,19 +150,19 @@
       <div class="text-red-500 text-sm text-center">{error}</div>
     {/if}
 
-    {#if result > 0 && fromCurrency && toCurrency}
+    {#if result > 0 && baseCurrency && targetCurrency}
       <div class="text-center pt-4">
         <p
           class="text-2xl font-semibold flex items-center justify-center gap-2"
         >
           {amount}
-          {#if fromCurrency}
-            <Coin text={fromCurrency.value} />
+          {#if baseCurrency}
+            <Coin text={baseCurrency.value} />
           {/if}
           ≈
           {result.toFixed(2)}
-          {#if toCurrency}
-            <Coin text={toCurrency.value} />
+          {#if targetCurrency}
+            <Coin text={targetCurrency.value} />
           {/if}
         </p>
       </div>
