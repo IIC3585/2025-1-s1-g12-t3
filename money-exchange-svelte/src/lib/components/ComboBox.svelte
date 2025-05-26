@@ -28,12 +28,11 @@
   }
  ];
  
- let open = false;
- let value = "";
+ let open = $state(false);
+ let value = $state("");
  
- 
- $: selectedValue =
-  frameworks.find((f) => f.value === value)?.label ?? "Select a framework...";
+ let selectedValue = $derived(frameworks.find((f) => f.value === value)?.label ?? "Select a framework...");
+  
  
  // We want to refocus the trigger button when the user selects
  // an item from the list so users can continue navigating the
@@ -44,7 +43,7 @@
    document.getElementById(triggerId)?.focus();
   });
  }
- let search = '';
+ let search = $state("");
 </script>
  
 <Popover.Root bind:open let:ids>
