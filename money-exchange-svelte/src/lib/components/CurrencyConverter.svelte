@@ -4,17 +4,14 @@
   import { Input } from "$lib/components/ui/input";
   import { Button } from "$lib/components/ui/button";
   import currencyService from "../../services/currencyService";
-  import CurrencySelect from "$lib/components/CurrencySelect.svelte";
   import Coin from "$lib/components/Coin.svelte";
   import ComboBox from "./ComboBox.svelte";
 
   let { baseCurrency = $bindable(), targetCurrency = $bindable() } = $props();
   let currencies = $state([]);
   let amount = $state(1);
-  let isLoading = false;
   let error = $state(null);
   let isLoadingCurrencies = $state(true);
-  let supportedCurrencies = $state([]);
   
   let conversionRate = $state(1);
   let result = $derived.by(() => {
@@ -55,11 +52,6 @@
 
   function swapCurrencies() {
     [baseCurrency, targetCurrency] = [targetCurrency, baseCurrency];
-    if (result > 0 && baseCurrency && targetCurrency) {
-      // convertCurrency();
-    } else if (baseCurrency && targetCurrency) {
-      // convertCurrency();
-    }
   }
 </script>
 
@@ -95,7 +87,7 @@
         </div>
 
         <div
-          class="grid grid-cols-[theme(width.48)_auto_theme(width.48)] gap-2 items-center"
+          class="flex flex-row items-center justify-between gap-2"
         >
           <ComboBox
             bind:selected={baseCurrency} 
