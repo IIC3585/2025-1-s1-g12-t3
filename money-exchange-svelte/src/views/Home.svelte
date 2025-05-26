@@ -1,4 +1,5 @@
 <script>
+  import ComboBox from "$lib/components/ComboBox.svelte";
   import CurrencyConverter from "../lib/components/CurrencyConverter.svelte";
   import HistoryChart from "../lib/components/HistoryChart.svelte";
 
@@ -24,4 +25,5 @@
     {timePeriod}
     {timeInterval}
   />
+  <ComboBox/>
 </div>
