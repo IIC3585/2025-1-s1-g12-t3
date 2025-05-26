@@ -6,6 +6,7 @@
   import currencyService from "../../services/currencyService";
   import CurrencySelect from "$lib/components/CurrencySelect.svelte";
   import Coin from "$lib/components/Coin.svelte";
+  import ComboBox from "./ComboBox.svelte";
 
   let { baseCurrency = $bindable(), targetCurrency = $bindable() } = $props();
   let currencies = $state([]);
@@ -14,7 +15,28 @@
   let error = "";
   let isLoadingCurrencies = $state(true);
   let supportedCurrencies = $state([]);
-  let result = $state(null);
+  
+  let conversionRate = $state(1);
+  let result = $derived.by(() => {
+    fetchConversionRate();
+    if (baseCurrency && targetCurrency) {
+      return amount * conversionRate;
+    }
+    return 0;
+  });
+
+  async function fetchConversionRate(){
+    try {
+      console.log("Calling currency service to get exchange rate...");
+      conversionRate = await currencyService.getExchangeRate(
+        baseCurrency.value, // Accede a .value solo si baseCurrency no es null
+        targetCurrency.value // Accede a .value solo si targetCurrency no es null
+      );
+    } catch (err) {
+      console.error("Error fetching conversion rate:", err);
+      error = "Error al obtener la tasa de cambio. Por favor, intenta de nuevo.";
+    }
+  }
 
   onMount(async () => {
     try {
@@ -22,6 +44,7 @@
       currencies = await currencyService.getSupportedCurrencies();
       baseCurrency = { value: 'USD', label: 'USD - United States Dollar' };
       targetCurrency = { value: 'CLP', label: 'CLP - Chilean Peso' };
+      fetchConversionRate();
     } catch (error) {
       console.error("Error al cargar las monedas:", error);
       error = "Error al cargar las monedas. Por favor, intenta de nuevo.";
@@ -30,40 +53,12 @@
     }
   });
 
-  async function convertCurrency() {
-    error = "";
-    isLoading = true;
-    console.log("Convirtiendo moneda...");
-    if (!baseCurrency || !targetCurrency) {
-      error = "Por favor, selecciona ambos tipos de monedas.";
-      isLoading = false;
-      return;
-    }
-
-    try {
-      console.log("Calling currency service to get exchange rate...");
-      const rate = await currencyService.getExchangeRate(
-        baseCurrency.value, // Accede a .value solo si baseCurrency no es null
-        targetCurrency.value // Accede a .value solo si targetCurrency no es null
-      );
-      console.log("Tasa de cambio:", rate);
-      result = amount * rate;
-      console.log("Resultado de la conversión:", result);
-    } catch (err) {
-      console.error("Error en la conversión:", err);
-      error = "Error en la conversión. Por favor, intenta de nuevo.";
-      result = 0;
-    } finally {
-      isLoading = false;
-    }
-  }
-
   function swapCurrencies() {
     [baseCurrency, targetCurrency] = [targetCurrency, baseCurrency];
     if (result > 0 && baseCurrency && targetCurrency) {
-      convertCurrency();
+      // convertCurrency();
     } else if (baseCurrency && targetCurrency) {
-      convertCurrency();
+      // convertCurrency();
     }
   }
 </script>
@@ -102,14 +97,10 @@
         <div
           class="grid grid-cols-[theme(width.48)_auto_theme(width.48)] gap-2 items-center"
         >
-          <CurrencySelect
-            id="from"
-            bind:selected={baseCurrency}
-            {currencies}
-            isLoading={isLoadingCurrencies}
-            placeholder="Selecciona moneda"
+          <ComboBox
+            bind:selected={baseCurrency} 
+            options={currencies}
           />
-
           <Button
             variant="outline"
             class="w-8 h-10 p-0 rounded-full"
@@ -118,13 +109,9 @@
           >
             ↔
           </Button>
-
-          <CurrencySelect
-            id="to"
-            bind:selected={targetCurrency}
-            {currencies}
-            isLoading={isLoadingCurrencies}
-            placeholder="Selecciona moneda"
+          <ComboBox
+            bind:selected={targetCurrency} 
+            options={currencies}
           />
         </div>
       </div>

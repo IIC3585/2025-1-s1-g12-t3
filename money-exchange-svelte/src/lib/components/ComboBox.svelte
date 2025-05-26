@@ -5,33 +5,13 @@
  import { Button } from "$lib/components/ui/button/index.js";
  import { cn } from "$lib/utils.js";
  
- const frameworks = [
-  {
-   value: "sveltekit",
-   label: "SvelteKit"
-  },
-  {
-   value: "next.js",
-   label: "Next.js"
-  },
-  {
-   value: "nuxt.js",
-   label: "Nuxt.js"
-  },
-  {
-   value: "remix",
-   label: "Remix"
-  },
-  {
-   value: "astro",
-   label: "Astro"
-  }
- ];
- 
+ let { selected = $bindable(), options } = $props<{
+  selected?: string;
+  options: { label: string; value: string }[]; }>();
+
  let open = $state(false);
- let value = $state("");
  
- let selectedValue = $derived(frameworks.find((f) => f.value === value)?.label ?? "Select a framework...");
+ let selectedValue = $derived(options.find((f) => f.value === selected.value)?.label ?? "Select a option...");
   
  
  // We want to refocus the trigger button when the user selects
@@ -53,26 +33,26 @@
    variant="outline"
    role="combobox"
    aria-expanded={open}
-   class="w-[200px] justify-between"
+   class="w-[200px] justify-between overflow-hidden"
   >
    {selectedValue}
   </Button>
  </Popover.Trigger>
  <Popover.Content class="w-[200px] p-0">
   <Command.Root>
-   <Command.Input placeholder="Search framework..." bind:value={search}/>
-   <Command.Empty>No framework found.</Command.Empty>
+   <Command.Input placeholder="Search option..." bind:value={search}/>
+   <Command.Empty>No option found.</Command.Empty>
    {#key search}
     <Command.Group>
-        {#each frameworks as framework}
+        {#each options as option}
         <Command.Item
-        value={framework.value}
-        onSelect={(currentValue) => {
-        value = currentValue;
-        closeAndFocusTrigger(ids.trigger);
-        }}
+            value={option.value}
+            onSelect={(currentValue) => {
+            selected = option;
+            closeAndFocusTrigger(ids.trigger);
+            }}
         >
-        {framework.label}
+        {option.label}
         </Command.Item>
         {/each}
     </Command.Group>

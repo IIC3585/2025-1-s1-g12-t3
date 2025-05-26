@@ -3,7 +3,7 @@
   import currencyService from "../../services/currencyService";
   
 
-  let { baseCurrency, targetCurrency, timePeriod, timeInterval } = $props();
+  let { baseCurrency = $bindable(), targetCurrency = $bindable(), timePeriod, timeInterval } = $props();
   const getDates = (timePeriod, timeInterval) => {
     const today = new Date();
     const dates = [];
@@ -39,8 +39,8 @@
     return getRateDomain(data);
   });
   $effect(() => {
-    console.log("Chart BC:", baseCurrency.value);
-    console.log("Chart TC:", targetCurrency.value);
+    console.log("Chart BC:", baseCurrency);
+    console.log("Chart TC:", targetCurrency);
     currencyService
       .getHistoricalRates(baseCurrency, targetCurrency, dates)
       .then((response) => {

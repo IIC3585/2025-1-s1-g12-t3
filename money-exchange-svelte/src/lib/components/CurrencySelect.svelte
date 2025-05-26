@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
   import * as Select from "$lib/components/ui/select";
-
   export let currencies = [];
   export let selected = null;
   export let placeholder = "Selecciona moneda";

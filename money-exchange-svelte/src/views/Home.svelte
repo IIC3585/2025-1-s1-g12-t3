@@ -12,6 +12,29 @@
     console.log("Base Currency:", baseCurrency.value);
     console.log("Target Currency:", targetCurrency.value);
   });
+   const frameworks = [
+  {
+   value: "sveltekit",
+   label: "SvelteKit"
+  },
+  {
+   value: "next.js",
+   label: "Next.js"
+  },
+  {
+   value: "nuxt.js",
+   label: "Nuxt.js"
+  },
+  {
+   value: "remix",
+   label: "Remix"
+  },
+  {
+   value: "astro",
+   label: "Astro"
+  }
+ ];
+ let value = $state("");
 </script>
 
 <div class="p-4 flex flex-col lg:flex-row gap-4 justify-center">
@@ -25,5 +48,4 @@
     {timePeriod}
     {timeInterval}
   />
-  <ComboBox/>
 </div>
