@@ -23,12 +23,12 @@
     return 0;
   });
   
-  let numberOfDecimals = $derived.by(()=>{
-    if (result > 1){
-      return 2; // For amounts greater than 1, show 2 decimal places
-    } else {
-      return 4; // For amounts less than or equal to 1, show 4 decimal places
-    }
+  let resultNumberOfDecimals = $derived.by(()=>{
+    return result >= 1 ? 2 : 4;
+  })
+
+  let amountNumberOfDecimals = $derived.by(()=>{
+    return amount >= 1 ? 2 : 4;
   })
 
   async function fetchConversionRate(){
@@ -61,6 +61,9 @@
 
   function swapCurrencies() {
     [baseCurrency, targetCurrency] = [targetCurrency, baseCurrency];
+    [amount, result] = [result, amount]; // Swap amounts as well
+    // Round result to the correct number of decimals after swap
+    amount = Number(amount.toFixed(amountNumberOfDecimals));
   }
 </script>
 
@@ -127,12 +130,12 @@
         <p
           class="text-2xl font-semibold flex items-center justify-center gap-2"
         >
-          {amount}
+          {amount.toFixed(amountNumberOfDecimals)}
           {#if baseCurrency}
             <Coin text={baseCurrency.value} />
           {/if}
           ≈
-          {result.toFixed(numberOfDecimals)}
+          {result.toFixed(resultNumberOfDecimals)}
           {#if targetCurrency}
             <Coin text={targetCurrency.value} />
           {/if}
