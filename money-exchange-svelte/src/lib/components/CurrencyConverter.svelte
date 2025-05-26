@@ -10,9 +10,9 @@
 
   let { baseCurrency = $bindable(), targetCurrency = $bindable() } = $props();
   let currencies = $state([]);
-  let amount = 1;
+  let amount = $state(1);
   let isLoading = false;
-  let error = "";
+  let error = $state(null);
   let isLoadingCurrencies = $state(true);
   let supportedCurrencies = $state([]);
   
@@ -26,11 +26,11 @@
   });
 
   async function fetchConversionRate(){
+    console.log("Fetching conversion rate for:", baseCurrency.value, targetCurrency.value);
     try {
-      console.log("Calling currency service to get exchange rate...");
       conversionRate = await currencyService.getExchangeRate(
-        baseCurrency.value, // Accede a .value solo si baseCurrency no es null
-        targetCurrency.value // Accede a .value solo si targetCurrency no es null
+        baseCurrency.value,
+        targetCurrency.value
       );
     } catch (err) {
       console.error("Error fetching conversion rate:", err);
@@ -116,22 +116,6 @@
         </div>
       </div>
     </div>
-
-    <Button
-      variant="default"
-      class="w-full mt-2"
-      on:click={convertCurrency}
-      disabled={isLoading ||
-        isLoadingCurrencies ||
-        !baseCurrency ||
-        !targetCurrency}
-    >
-      {#if isLoading}
-        Convirtiendo...
-      {:else}
-        Convertir
-      {/if}
-    </Button>
 
     {#if error}
       <div class="text-red-500 text-sm text-center">{error}</div>
