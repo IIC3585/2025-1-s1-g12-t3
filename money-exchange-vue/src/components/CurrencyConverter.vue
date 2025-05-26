@@ -28,15 +28,12 @@
             <label for="to">A</label>
           </div>
 
-          <div class="grid grid-cols-[theme(width.48)_auto_theme(width.48)] gap-2 items-center">
-            <CurrencySelect
-              id="from"
-              v-model:selected="fromCurrency"
-              :currencies="currencies"
-              :is-loading="isLoadingCurrencies"
-              placeholder="Selecciona moneda"
+          <div class="flex flex-row items-center justify-between gap-2">
+            <ComboBox
+              v-model:selected="baseCurrency"
+              :options="currencies"
             />
-
+            
             <Button
               variant="outline"
               class="w-8 h-10 p-0 rounded-full"
@@ -45,38 +42,26 @@
             >
               ↔
             </Button>
-
-            <CurrencySelect
-              id="to"
-              v-model:selected="toCurrency"
-              :currencies="currencies"
-              :is-loading="isLoadingCurrencies"
-              placeholder="Selecciona moneda"
+            
+            <ComboBox
+              v-model:selected="targetCurrency"
+              :options="currencies"
             />
           </div>
         </div>
       </div>
 
-      <Button
-        variant="default"
-        class="w-full mt-2"
-        :disabled="isLoading || isLoadingCurrencies || !fromCurrency || !toCurrency"
-        @click="convertCurrency"
-      >
-        {{ isLoading ? 'Convirtiendo...' : 'Convertir' }}
-      </Button>
-
       <div v-if="error" class="text-red-500 text-sm text-center">
         {{ error }}
       </div>
 
-      <div v-if="result > 0 && fromCurrency && toCurrency" class="text-center pt-4">
+      <div v-if="result > 0 && baseCurrency && targetCurrency" class="text-center pt-4">
         <p class="text-2xl font-semibold flex items-center justify-center gap-2">
           {{ amount }}
-          <Coin v-if="fromCurrency" :text="fromCurrency.value" />
+          <Coin v-if="baseCurrency" :text="baseCurrency.value" />
           ≈
-          {{ result.toFixed(2) }}
-          <Coin v-if="toCurrency" :text="toCurrency.value" />
+          {{ result.toFixed(numberOfDecimals) }}
+          <Coin v-if="targetCurrency" :text="targetCurrency.value" />
         </p>
       </div>
     </CardContent>
@@ -84,12 +69,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import currencyService from '@/services/currencyService';
-import CurrencySelect from '@/components/CurrencySelect.vue';
+import ComboBox from '@/components/ComboBox.vue';
 import Coin from '@/components/Coin.vue';
 
 interface Currency {
@@ -97,26 +82,66 @@ interface Currency {
   label: string;
 }
 
+interface Props {
+  baseCurrency?: Currency;
+  targetCurrency?: Currency;
+}
+
+interface Emits {
+  (e: 'update:baseCurrency', value: Currency): void;
+  (e: 'update:targetCurrency', value: Currency): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
 const currencies = ref<Currency[]>([]);
-const fromCurrency = ref<Currency | null>(null);
-const toCurrency = ref<Currency | null>(null);
 const amount = ref<number>(1);
-const result = ref<number>(0);
-const isLoading = ref<boolean>(false);
-const error = ref<string>("");
+const error = ref<string | null>(null);
 const isLoadingCurrencies = ref<boolean>(true);
+const conversionRate = ref<number>(1);
+
+const baseCurrency = defineModel<Currency>('baseCurrency');
+const targetCurrency = defineModel<Currency>('targetCurrency');
+
+const result = computed(() => {
+  fetchConversionRate();
+  if (baseCurrency.value && targetCurrency.value) {
+    return amount.value * conversionRate.value;
+  }
+  return 0;
+});
+
+const numberOfDecimals = computed(() => {
+  if (result.value > 1) {
+    return 2; // For amounts greater than 1, show 2 decimal places
+  } else {
+    return 4; // For amounts less than or equal to 1, show 4 decimal places
+  }
+});
+
+async function fetchConversionRate() {
+  if (!baseCurrency.value || !targetCurrency.value) return;
+  
+  console.log("Fetching conversion rate for:", baseCurrency.value.value, targetCurrency.value.value);
+  try {
+    conversionRate.value = await currencyService.getExchangeRate(
+      baseCurrency.value.value,
+      targetCurrency.value.value
+    );
+  } catch (err) {
+    console.error("Error fetching conversion rate:", err);
+    error.value = "Error al obtener la tasa de cambio. Por favor, intenta de nuevo.";
+  }
+}
 
 onMounted(async () => {
   try {
-    const supportedCurrencies = await currencyService.getSupportedCurrencies();
-    
-    currencies.value = supportedCurrencies; // currencyService devuelve el formato { value, label }
-    
-    // Asignar monedas por defecto o la primera si no se encuentran
-    fromCurrency.value = 
-      currencies.value.find((c) => c.value === "USD") || currencies.value[0] || null;
-    toCurrency.value = 
-      currencies.value.find((c) => c.value === "CLP") || currencies.value[1] || null;
+    isLoadingCurrencies.value = true;
+    currencies.value = await currencyService.getSupportedCurrencies();
+    baseCurrency.value = { value: 'USD', label: 'USD - United States Dollar' };
+    targetCurrency.value = { value: 'CLP', label: 'CLP - Chilean Peso' };
+    fetchConversionRate();
   } catch (err) {
     console.error("Error al cargar las monedas:", err);
     error.value = "Error al cargar las monedas. Por favor, intenta de nuevo.";
@@ -125,37 +150,16 @@ onMounted(async () => {
   }
 });
 
-async function convertCurrency() {
-  error.value = "";
-  isLoading.value = true;
-
-  if (!fromCurrency.value || !toCurrency.value) {
-    error.value = "Por favor, selecciona ambos tipos de monedas.";
-    isLoading.value = false;
-    return;
-  }
-
-  try {
-    const rate = await currencyService.getExchangeRate(
-      fromCurrency.value.value, // Accede a .value solo si fromCurrency no es null
-      toCurrency.value.value // Accede a .value solo si toCurrency no es null
-    );
-    result.value = amount.value * rate;
-  } catch (err) {
-    console.error("Error en la conversión:", err);
-    error.value = "Error en la conversión. Por favor, intenta de nuevo.";
-    result.value = 0;
-  } finally {
-    isLoading.value = false;
-  }
-}
-
 function swapCurrencies() {
-  [fromCurrency.value, toCurrency.value] = [toCurrency.value, fromCurrency.value];
-  if (result.value > 0 && fromCurrency.value && toCurrency.value) {
-    convertCurrency();
-  } else if (fromCurrency.value && toCurrency.value) {
-    convertCurrency();
-  }
+  const temp = baseCurrency.value;
+  baseCurrency.value = targetCurrency.value;
+  targetCurrency.value = temp;
 }
+
+// Watch for currency changes to trigger rate fetching
+watch([baseCurrency, targetCurrency], () => {
+  if (baseCurrency.value && targetCurrency.value) {
+    fetchConversionRate();
+  }
+}, { deep: true });
 </script>

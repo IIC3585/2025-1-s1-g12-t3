@@ -1,9 +1,12 @@
 <template>
   <div class="p-4 flex flex-col lg:flex-row gap-4 justify-center">
-    <CurrencyConverter />
+    <CurrencyConverter 
+      v-model:base-currency="baseCurrency"
+      v-model:target-currency="targetCurrency"
+    />
     <HistoryChart
-      :base-currency="baseCurrency"
-      :target-currency="targetCurrency"
+      :base-currency="baseCurrency.value"
+      :target-currency="targetCurrency.value"
       :time-period="timePeriod"
       :time-interval="timeInterval"
     />
@@ -11,12 +14,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { reactive } from 'vue';
 import CurrencyConverter from '@/components/CurrencyConverter.vue';
 import HistoryChart from '@/components/HistoryChart.vue';
 
-const baseCurrency = ref<string>("USD");
-const targetCurrency = ref<string>("CLP");
-const timePeriod = ref<number>(15);
-const timeInterval = ref<number>(1);
+interface Currency {
+  value: string;
+  label: string;
+}
+
+const timePeriod = 15;
+const timeInterval = 1;
+
+const baseCurrency = reactive<Currency>({ value: 'USD', label: 'USD - United States Dollar' });
+const targetCurrency = reactive<Currency>({ value: 'CLP', label: 'CLP - Chilean Peso' });
 </script>

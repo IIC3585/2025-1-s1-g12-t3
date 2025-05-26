@@ -1,7 +1,14 @@
 <template>
   <div class="grow-7 border-2 border-gray-300 rounded-lg p-4 w-md lg:width-full flex flex-col">
     <div class="font-bold">{{ baseCurrency }} to {{ targetCurrency }}</div>
+    <div 
+      v-if="!fetchSuccess"
+      class="flex-1 flex items-center justify-center min-h-[300px] text-red-500"
+    >
+      {{ unknownCurrencyHistoryMessage }}
+    </div>
     <AreaChart 
+      v-else
       :data="data" 
       :x-attr="xAttr" 
       :y-attr="yAttr" 
@@ -17,9 +24,14 @@ import { ref, computed, watchEffect } from 'vue';
 import AreaChart from '@/components/AreaChart.vue';
 import currencyService from '@/services/currencyService';
 
+interface Currency {
+  value: string;
+  label: string;
+}
+
 interface Props {
-  baseCurrency: string;
-  targetCurrency: string;
+  baseCurrency: Currency | string;
+  targetCurrency: Currency | string;
   timePeriod: number;
   timeInterval: number;
 }
@@ -47,7 +59,16 @@ const dates = computed(() => {
 const xAttr = "date";
 const yAttr = "rate";
 
+const unknownCurrencyHistoryMessage = computed(() => {
+  const base = typeof props.baseCurrency === 'string' ? props.baseCurrency : props.baseCurrency?.value || props.baseCurrency;
+  const target = typeof props.targetCurrency === 'string' ? props.targetCurrency : props.targetCurrency?.value || props.targetCurrency;
+  return `No historical data available for ${base} to ${target}.`;
+});
+
+const fetchSuccess = ref<boolean>(false);
+
 const getRateDomain = (data: any[]): [number, number] => {
+  if (data.length === 0) return [0, 1];
   const threshold = 0.25;
   let min = Math.min(...data.map((d) => d[yAttr]));
   let max = Math.max(...data.map((d) => d[yAttr]));
@@ -65,15 +86,20 @@ const dataDomain = computed(() => {
 
 watchEffect(async () => {
   try {
+    const base = typeof props.baseCurrency === 'string' ? props.baseCurrency : props.baseCurrency?.value;
+    const target = typeof props.targetCurrency === 'string' ? props.targetCurrency : props.targetCurrency?.value;
+    
     const response = await currencyService.getHistoricalRates(
-      props.baseCurrency, 
-      props.targetCurrency, 
+      base,
+      target,
       dates.value
     );
     data.value = response;
+    fetchSuccess.value = true;
   } catch (error) {
     console.error('Error fetching historical rates:', error);
     data.value = [];
+    fetchSuccess.value = false;
   }
 });
 </script>
