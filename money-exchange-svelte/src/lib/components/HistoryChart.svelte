@@ -44,8 +44,6 @@
     return getRateDomain(data);
   });
   $effect(() => {
-    console.log("Chart BC:", baseCurrency);
-    console.log("Chart TC:", targetCurrency);
     currencyService
       .getHistoricalRates(baseCurrency, targetCurrency, dates)
       .then((response) => {
