@@ -13,14 +13,23 @@
   let error = $state(null);
   let isLoadingCurrencies = $state(true);
   
+  
   let conversionRate = $state(1);
   let result = $derived.by(() => {
     fetchConversionRate();
     if (baseCurrency && targetCurrency) {
-      return amount * conversionRate;
+      return  amount * conversionRate;
     }
     return 0;
   });
+  
+  let numberOfDecimals = $derived.by(()=>{
+    if (result > 1){
+      return 2; // For amounts greater than 1, show 2 decimal places
+    } else {
+      return 4; // For amounts less than or equal to 1, show 4 decimal places
+    }
+  })
 
   async function fetchConversionRate(){
     console.log("Fetching conversion rate for:", baseCurrency.value, targetCurrency.value);
@@ -123,7 +132,7 @@
             <Coin text={baseCurrency.value} />
           {/if}
           ≈
-          {result.toFixed(2)}
+          {result.toFixed(numberOfDecimals)}
           {#if targetCurrency}
             <Coin text={targetCurrency.value} />
           {/if}

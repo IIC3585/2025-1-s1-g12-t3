@@ -62,7 +62,9 @@
 <div class="grow-7 border-2 border-gray-300 rounded-lg p-4 w-md lg:width-full flex flex-col">
   <div class="font-bold">{baseCurrency} to {targetCurrency}</div>
   {#if !fetchSuccess}
-    <div class="text-red-500 w-full">{unknownCurrencyHistoryMessage}</div>
+    <div class="flex-1 flex items-center justify-center min-h-[300px] text-red-500">
+      {unknownCurrencyHistoryMessage}
+    </div>
   {:else}
       <AreaChart {data} {xAttr} {yAttr} {dataDomain} {areaColor} {strokeColor}></AreaChart>
   {/if}
