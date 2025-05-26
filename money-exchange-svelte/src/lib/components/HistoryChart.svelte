@@ -3,8 +3,7 @@
   import currencyService from "../../services/currencyService";
   
 
-  let { baseCurrency, targetCurrency, timePeriod, timeInterval } = $props();
-  
+  let { baseCurrency = $bindable(), targetCurrency = $bindable(), timePeriod, timeInterval } = $props();
   const getDates = (timePeriod, timeInterval) => {
     const today = new Date();
     const dates = [];
@@ -26,6 +25,11 @@
   let xAttr = "date";
   let yAttr = "rate";
 
+  let unknownCurrencyHistoryMessage = $derived.by(() => {
+    return `No historical data available for ${baseCurrency} to ${targetCurrency}.`;
+  });
+  let fetchSuccess = $state(false);
+
   const getRateDomain = (data) => {
     const threshold = 0.25;
     let min = Math.min(...data.map((d) => d[yAttr]));
@@ -44,11 +48,22 @@
       .getHistoricalRates(baseCurrency, targetCurrency, dates)
       .then((response) => {
         data = response;
+        fetchSuccess = true;
+      })
+      .catch((error) => {
+        console.error("Error fetching historical rates:", error);
+        fetchSuccess = false;
       });
   });
 </script>
 
 <div class="grow-7 border-2 border-gray-300 rounded-lg p-4 w-md lg:width-full flex flex-col">
   <div class="font-bold">{baseCurrency} to {targetCurrency}</div>
-  <AreaChart {data} {xAttr} {yAttr} {dataDomain} {areaColor} {strokeColor}></AreaChart>
+  {#if !fetchSuccess}
+    <div class="flex-1 flex items-center justify-center min-h-[300px] text-red-500">
+      {unknownCurrencyHistoryMessage}
+    </div>
+  {:else}
+      <AreaChart {data} {xAttr} {yAttr} {dataDomain} {areaColor} {strokeColor}></AreaChart>
+  {/if}
 </div>

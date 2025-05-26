@@ -4,70 +4,63 @@
   import { Input } from "$lib/components/ui/input";
   import { Button } from "$lib/components/ui/button";
   import currencyService from "../../services/currencyService";
-  import CurrencySelect from "$lib/components/CurrencySelect.svelte";
   import Coin from "$lib/components/Coin.svelte";
+  import ComboBox from "./ComboBox.svelte";
 
-  let currencies = [];
-  let fromCurrency = null;
-  let toCurrency = null;
-  let amount = 1;
-  let result = 0;
-  let isLoading = false;
-  let error = "";
-  let isLoadingCurrencies = true;
+  let { baseCurrency = $bindable(), targetCurrency = $bindable() } = $props();
+  let currencies = $state([]);
+  let amount = $state(1);
+  let error = $state(null);
+  let isLoadingCurrencies = $state(true);
+  
+  
+  let conversionRate = $state(1);
+  let result = $derived.by(() => {
+    fetchConversionRate();
+    if (baseCurrency && targetCurrency) {
+      return  amount * conversionRate;
+    }
+    return 0;
+  });
+  
+  let numberOfDecimals = $derived.by(()=>{
+    if (result > 1){
+      return 2; // For amounts greater than 1, show 2 decimal places
+    } else {
+      return 4; // For amounts less than or equal to 1, show 4 decimal places
+    }
+  })
+
+  async function fetchConversionRate(){
+    console.log("Fetching conversion rate for:", baseCurrency.value, targetCurrency.value);
+    try {
+      conversionRate = await currencyService.getExchangeRate(
+        baseCurrency.value,
+        targetCurrency.value
+      );
+    } catch (err) {
+      console.error("Error fetching conversion rate:", err);
+      error = "Error al obtener la tasa de cambio. Por favor, intenta de nuevo.";
+    }
+  }
 
   onMount(async () => {
     try {
-      const supportedCurrencies =
-        await currencyService.getSupportedCurrencies();
-
-      currencies = supportedCurrencies; // currencyService devuelve el formato { value, label }
-
-      // Asignar monedas por defecto o la primera si no se encuentran
-      fromCurrency =
-        currencies.find((c) => c.value === "USD") || currencies[0] || null;
-      toCurrency =
-        currencies.find((c) => c.value === "CLP") || currencies[1] || null;
-    } catch (err) {
-      console.error("Error al cargar las monedas:", err);
+      isLoadingCurrencies = true;
+      currencies = await currencyService.getSupportedCurrencies();
+      baseCurrency = { value: 'USD', label: 'USD - United States Dollar' };
+      targetCurrency = { value: 'CLP', label: 'CLP - Chilean Peso' };
+      fetchConversionRate();
+    } catch (error) {
+      console.error("Error al cargar las monedas:", error);
       error = "Error al cargar las monedas. Por favor, intenta de nuevo.";
     } finally {
       isLoadingCurrencies = false;
     }
   });
 
-  async function convertCurrency() {
-    error = "";
-    isLoading = true;
-
-    if (!fromCurrency || !toCurrency) {
-      error = "Por favor, selecciona ambos tipos de monedas.";
-      isLoading = false;
-      return;
-    }
-
-    try {
-      const rate = await currencyService.getExchangeRate(
-        fromCurrency.value, // Accede a .value solo si fromCurrency no es null
-        toCurrency.value // Accede a .value solo si toCurrency no es null
-      );
-      result = amount * rate;
-    } catch (err) {
-      console.error("Error en la conversión:", err);
-      error = "Error en la conversión. Por favor, intenta de nuevo.";
-      result = 0;
-    } finally {
-      isLoading = false;
-    }
-  }
-
   function swapCurrencies() {
-    [fromCurrency, toCurrency] = [toCurrency, fromCurrency];
-    if (result > 0 && fromCurrency && toCurrency) {
-      convertCurrency();
-    } else if (fromCurrency && toCurrency) {
-      convertCurrency();
-    }
+    [baseCurrency, targetCurrency] = [targetCurrency, baseCurrency];
   }
 </script>
 
@@ -103,16 +96,12 @@
         </div>
 
         <div
-          class="grid grid-cols-[theme(width.48)_auto_theme(width.48)] gap-2 items-center"
+          class="flex flex-row items-center justify-between gap-2"
         >
-          <CurrencySelect
-            id="from"
-            bind:selected={fromCurrency}
-            {currencies}
-            isLoading={isLoadingCurrencies}
-            placeholder="Selecciona moneda"
+          <ComboBox
+            bind:selected={baseCurrency} 
+            options={currencies}
           />
-
           <Button
             variant="outline"
             class="w-8 h-10 p-0 rounded-full"
@@ -121,51 +110,31 @@
           >
             ↔
           </Button>
-
-          <CurrencySelect
-            id="to"
-            bind:selected={toCurrency}
-            {currencies}
-            isLoading={isLoadingCurrencies}
-            placeholder="Selecciona moneda"
+          <ComboBox
+            bind:selected={targetCurrency} 
+            options={currencies}
           />
         </div>
       </div>
     </div>
 
-    <Button
-      variant="default"
-      class="w-full mt-2"
-      on:click={convertCurrency}
-      disabled={isLoading ||
-        isLoadingCurrencies ||
-        !fromCurrency ||
-        !toCurrency}
-    >
-      {#if isLoading}
-        Convirtiendo...
-      {:else}
-        Convertir
-      {/if}
-    </Button>
-
     {#if error}
       <div class="text-red-500 text-sm text-center">{error}</div>
     {/if}
 
-    {#if result > 0 && fromCurrency && toCurrency}
+    {#if result > 0 && baseCurrency && targetCurrency}
       <div class="text-center pt-4">
         <p
           class="text-2xl font-semibold flex items-center justify-center gap-2"
         >
           {amount}
-          {#if fromCurrency}
-            <Coin text={fromCurrency.value} />
+          {#if baseCurrency}
+            <Coin text={baseCurrency.value} />
           {/if}
           ≈
-          {result.toFixed(2)}
-          {#if toCurrency}
-            <Coin text={toCurrency.value} />
+          {result.toFixed(numberOfDecimals)}
+          {#if targetCurrency}
+            <Coin text={targetCurrency.value} />
           {/if}
         </p>
       </div>
